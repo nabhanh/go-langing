@@ -19,7 +19,7 @@ type Product struct {
 	UpdateAt  time.Time          `json:"updatedAt" bson:"updated_at"`
 }
 
-func ValidateProduct(product Product) validator.ValidationErrors {
+func validateProduct(product Product) validator.ValidationErrors {
 
 	validate := validator.New()
 
@@ -46,7 +46,7 @@ func CreateProduct(c *fiber.Ctx) error {
 		return err
 	}
 
-	errors := ValidateProduct(product)
+	errors := validateProduct(product)
 
 	if len(errors) > 0 {
 		return c.Status(fiber.StatusBadRequest).JSON(errors)
@@ -67,4 +67,30 @@ func CreateProduct(c *fiber.Ctx) error {
 	}
 
 	return c.JSON(product)
+}
+
+func GetProducts(c *fiber.Ctx) error {
+	client, err := db.GetClient()
+
+	if err != nil {
+		return err
+	}
+
+	collection := client.Database(db.Db).Collection("products")
+
+	cursor, err := collection.Find(context.TODO(), nil)
+
+	if err != nil {
+		return err
+	}
+
+	var products []Product
+
+	err = cursor.All(context.TODO(), &products)
+
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(products)
 }
